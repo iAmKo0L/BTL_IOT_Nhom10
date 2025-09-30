@@ -13,7 +13,9 @@ Bước 2: Chọn đề tài
 	+ Các công nghệ, lý thuyết sẽ áp dụng cho dự án
 	+ Các tính năng dự kiến triển khai
 	+ Phân chia công việc trong nhóm và kế hoạch triển khai
-
+- Anh em làm chung nội dung giữa kỳ ở link docs: https://docs.google.com/document/d/1uCHlH8RZBzH9NXfUnWA4WuaIkBXTV9p0uPOGNquwOZE/edit?usp=sharing
+- Thống nhất xong nội dung thì làm báo cáo hoàn chỉnh và xuất file pdf.
+  
 Bước 3: Thực hiện
 - Các nhóm thực hiện dự án theo kế hoạch đã đề ra
 
