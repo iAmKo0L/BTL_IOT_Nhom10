@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Điều Khiển IoT - Gas Detection</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 Hệ Thống Phát Hiện Khí Gas & Lửa</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span id="statusText">Đang kết nối...</span>
+            </div>
+        </header>
+
+        <div class="device-selector">
+            <label for="deviceSelect">Chọn thiết bị:</label>
+            <select id="deviceSelect">
+                <option value="">-- Chọn thiết bị --</option>
+            </select>
+        </div>
+
+        <div class="dashboard">
+            <!-- Sensor Data -->
+            <div class="card sensor-card">
+                <h2>📊 Dữ Liệu Cảm Biến</h2>
+                <div class="sensor-data">
+                    <div class="sensor-item">
+                        <label>Khí Gas (MQ2):</label>
+                        <div class="value" id="gasValue">-- ppm</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="gasProgress"></div>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <label>Cảm biến Lửa:</label>
+                        <div class="value" id="fireValue">--</div>
+                    </div>
+                    <div class="sensor-item">
+                        <label>Ngưỡng Gas:</label>
+                        <input type="number" id="thresholdInput" min="0" max="10000" value="4000">
+                        <button onclick="updateThreshold()">Cập nhật</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="card control-card">
+                <h2>🎛️ Điều Khiển</h2>
+                
+                <div class="mode-selector">
+                    <label>Chế độ:</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="autoManualToggle">
+                        <label for="autoManualToggle">
+                            <span class="toggle-label">AUTO</span>
+                            <span class="toggle-label">MANUAL</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="relay-controls">
+                    <h3>Relay Control</h3>
+                    <div class="relay-item">
+                        <label>Relay 1:</label>
+                        <button class="btn-toggle" id="relay1Btn" onclick="toggleRelay(1)">
+                            TẮT
+                        </button>
+                    </div>
+                    <div class="relay-item">
+                        <label>Relay 2:</label>
+                        <button class="btn-toggle" id="relay2Btn" onclick="toggleRelay(2)">
+                            TẮT
+                        </button>
+                    </div>
+                </div>
+
+                <div class="window-control">
+                    <h3>Điều Khiển Cửa Sổ</h3>
+                    <button class="btn-toggle" id="windowBtn" onclick="toggleWindow()">
+                        ĐÓNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="card status-card">
+                <h2>📡 Trạng Thái Thiết Bị</h2>
+                <div class="status-info">
+                    <div class="info-item">
+                        <label>ID Thiết bị:</label>
+                        <span id="deviceId">--</span>
+                    </div>
+                    <div class="info-item">
+                        <label>IP Address:</label>
+                        <span id="deviceIP">--</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Cập nhật lần cuối:</label>
+                        <span id="lastUpdate">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTA Update Panel -->
+            <div class="card ota-card">
+                <h2>🔄 Cập Nhật Firmware (OTA)</h2>
+                
+                <!-- Upload Firmware Section -->
+                <div class="ota-upload">
+                    <h3>📤 Upload Firmware mới</h3>
+                    <div class="upload-controls">
+                        <input type="file" id="firmwareFile" accept=".bin" style="display: none;" onchange="handleFileSelect(event)">
+                        <button onclick="document.getElementById('firmwareFile').click()" class="btn-secondary">
+                            Chọn file .bin
+                        </button>
+                        <span id="fileName" style="margin-left: 10px; color: #666;">Chưa chọn file</span>
+                    </div>
+                    <div class="upload-controls" style="margin-top: 10px;">
+                        <label for="firmwareVersion">Phiên bản (tùy chọn):</label>
+                        <input type="text" id="firmwareVersion" placeholder="ví dụ: 1.0.1" style="margin-left: 10px; padding: 5px;">
+                        <button onclick="uploadFirmware()" class="btn-primary" style="margin-left: 10px;">
+                            Upload Firmware
+                        </button>
+                    </div>
+                </div>
+
+                <hr style="margin: 20px 0; border: 1px solid #ddd;">
+
+                <!-- Select and Update Section -->
+                <div class="ota-controls">
+                    <label for="firmwareSelect">Chọn phiên bản đã upload:</label>
+                    <select id="firmwareSelect">
+                        <option value="">-- Chọn firmware --</option>
+                    </select>
+                    <button onclick="loadFirmwareList()">Tải danh sách</button>
+                    <button onclick="startOTAUpdate()" class="btn-primary">Bắt đầu cập nhật</button>
+                </div>
+                <div class="ota-status" id="otaStatus"></div>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+    </div>
+
+    <script>
+        // Make sure handleFileSelect is available globally
+        window.handleFileSelect = function(event) {
+            console.log('handleFileSelect called from window', event);
+            const fileInput = event ? event.target : document.getElementById('firmwareFile');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                console.log('No file selected');
+                return;
+            }
+            const fileName = fileInput.files[0].name;
+            const fileNameSpan = document.getElementById('fileName');
+            if (fileNameSpan) {
+                fileNameSpan.textContent = fileName;
+                console.log('File name updated:', fileName);
+            }
+        };
+        
+        // Define uploadFirmware inline to ensure it's available immediately
+        window.uploadFirmware = async function() {
+            const API_URL = 'http://localhost:3000/api';
+            const fileInput = document.getElementById('firmwareFile');
+            const versionInput = document.getElementById('firmwareVersion');
+            
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                if (window.showAlert) {
+                    window.showAlert('Vui lòng chọn file firmware (.bin)', 'warning');
+                } else {
+                    alert('Vui lòng chọn file firmware (.bin)');
+                }
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            if (!file.name.endsWith('.bin')) {
+                if (window.showAlert) {
+                    window.showAlert('File phải có định dạng .bin', 'error');
+                } else {
+                    alert('File phải có định dạng .bin');
+                }
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('firmware', file);
+            if (versionInput && versionInput.value.trim()) {
+                formData.append('version', versionInput.value.trim());
+            }
+            
+            const statusDiv = document.getElementById('otaStatus');
+            if (statusDiv) {
+                statusDiv.className = 'ota-status active';
+                statusDiv.textContent = 'Đang upload firmware...';
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/firmware/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (statusDiv) {
+                        statusDiv.className = 'ota-status active success';
+                        statusDiv.textContent = `Upload thành công! Phiên bản: v${result.metadata.version}`;
+                    }
+                    if (window.showAlert) {
+                        window.showAlert('Upload firmware thành công!', 'success');
+                    }
+                    
+                    // Reset form
+                    fileInput.value = '';
+                    if (versionInput) versionInput.value = '';
+                    const fileNameSpan = document.getElementById('fileName');
+                    if (fileNameSpan) fileNameSpan.textContent = 'Chưa chọn file';
+                    
+                    // Reload firmware list
+                    if (window.loadFirmwareList) {
+                        window.loadFirmwareList();
+                    }
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+            } catch (error) {
+                if (statusDiv) {
+                    statusDiv.className = 'ota-status active error';
+                    statusDiv.textContent = `Lỗi: ${error.message}`;
+                }
+                if (window.showAlert) {
+                    window.showAlert('Lỗi upload firmware: ' + error.message, 'error');
+                } else {
+                    alert('Lỗi upload firmware: ' + error.message);
+                }
+            }
+        };
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
+

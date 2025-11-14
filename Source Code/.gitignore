@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Firmware files (uploaded binaries)
+backend/firmware/*.bin
+backend/firmware/*.json
+
+# Build files
+main_mqtt/build/
+*.bin
+*.elf
+*.map
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Arduino IDE
+*.prefs
+*.bak
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
